@@ -1,0 +1,12 @@
+[package]
+name = "langram"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["earley"]
+earley = []
+lr = []
+
+[dependencies]
+multimap = "0.9.1"
