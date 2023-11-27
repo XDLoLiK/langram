@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 
-use multimap::MultiMap;
-
 use std::collections::HashSet;
 use std::str::FromStr;
-use std::string::ParseError;
+
+use anyhow::bail;
+use multimap::MultiMap;
 
 #[cfg(feature = "earley")]
 pub mod earley;
@@ -23,40 +23,57 @@ pub struct CFGrammar {
 }
 
 impl FromStr for CFGrammar {
-    type Err = ParseError;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let lines: Vec<_> = s.lines().collect();
-        assert!(
-            lines.len() >= 4,
-            "There must be at least four lines in the string (at least one for each field)."
-        );
+
+        if lines.len() < 4 {
+            bail!(
+                "There must be at least four lines \
+                 in the string (at least one for each field)."
+            );
+        }
+
         let terminals: HashSet<_> = lines[0].chars().collect();
         let non_terminals: HashSet<_> = lines[1].chars().collect();
         let mut rules = MultiMap::new();
 
         for i in 2..(lines.len() - 1) {
             let parts: Vec<_> = lines[i].split("->").map(|s: &str| s.trim()).collect();
-            assert!(
-                parts.len() == 2,
-                "There must be only one delimiter in the rule."
-            );
+
+            if parts.len() != 2 {
+                bail!("There must be only one delimiter in the rule.");
+            }
+
             let key = parts[0];
-            assert!(
-                key.len() == 1,
-                "There must be exactly one non-terminal in the left part of the CF grammar {key}."
-            );
+
+            if key.len() != 1 {
+                bail!(
+                    "There must be exactly one non-terminal \
+                     in the left part of the CF grammar {key}."
+                );
+            }
+
             let key = key.chars().next().unwrap();
-            assert!(
-                non_terminals.contains(&key),
-                "Only non-terminals can be present in the left part of the CF grammar"
-            );
+
+            if !non_terminals.contains(&key) {
+                bail!(
+                    "Only non-terminals can be present \
+                     in the left part of the CF grammar."
+                );
+            }
+
             let value = parts[1];
             rules.insert(key, value.to_string());
         }
 
         let start = lines.last().unwrap();
-        assert!(start.len() == 1, "There must be exactly one start rule.");
+
+        if start.len() != 1 {
+            bail!("There must be exactly one start rule.");
+        }
+
         let start = start.chars().next().unwrap();
         Ok(Self {
             terminals,
