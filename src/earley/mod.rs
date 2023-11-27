@@ -1,4 +1,5 @@
 use super::{CFGrammar, CFRule, Parser};
+
 use std::collections::HashSet;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
@@ -26,11 +27,18 @@ pub struct EarleyParser {
 
 impl Parser for EarleyParser {
     fn fit(&mut self, grammar: &CFGrammar) {
-        assert!(self.check_grammar(grammar));
+        assert!(
+            self.check_grammar(grammar),
+            "The grammar is not context free."
+        );
         self.grammar = Some(grammar.clone());
     }
 
     fn predict(&mut self, word: &str) -> bool {
+        assert!(
+            self.grammar.is_some(),
+            "Fit should be called on the parser first."
+        );
         self.situations.clear();
         self.situations.resize(word.len() + 1, HashSet::new());
         let start_rule = self.grammar.as_ref().unwrap().start_rule();
@@ -42,7 +50,11 @@ impl Parser for EarleyParser {
             self.do_layer(i);
         }
 
-        self.situations[word.len()].contains(&EarleySituation::new(&start_rule, 1, 0))
+        self.situations[word.len()].contains(&EarleySituation::new(
+            &start_rule,
+            start_rule.1.len(),
+            0,
+        ))
     }
 }
 
@@ -154,7 +166,6 @@ impl EarleyParser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use multimap::MultiMap;
 
     #[test]
     fn earley_unit_test_1() {
@@ -164,6 +175,7 @@ mod tests {
         assert_eq!(Parser::predict(&mut parser, "(a+a)"), true);
     }
 
+    #[test]
     fn earley_unit_test_2() {
         let grammar = get_test_grammar();
         let mut parser = EarleyParser::new();
@@ -174,14 +186,15 @@ mod tests {
     fn get_test_grammar() -> CFGrammar {
         let terminals = ['a', '+', '*', '(', ')'];
         let non_terminals = ['S', 'T', 'F', 'N'];
-        let mut rules = MultiMap::new();
-        rules.insert('S', "N".to_string());
-        rules.insert('N', "T+N".to_string());
-        rules.insert('N', "T".to_string());
-        rules.insert('T', "F*T".to_string());
-        rules.insert('T', "F".to_string());
-        rules.insert('F', "(N)".to_string());
-        rules.insert('F', "a".to_string());
+        let rules = [
+            ('S', "N".to_string()),
+            ('N', "T+N".to_string()),
+            ('N', "T".to_string()),
+            ('T', "F*T".to_string()),
+            ('T', "F".to_string()),
+            ('F', "(N)".to_string()),
+            ('F', "a".to_string()),
+        ];
         let start = 'S';
         CFGrammar::new(&terminals, &non_terminals, &rules, start)
     }
