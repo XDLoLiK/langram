@@ -10,7 +10,7 @@ export RUSTFLAGS="-Cinstrument-coverage"
 cargo build --all-features
 
 # Ensure each test runs gets its own profile information 
-export LLVM_PROFILE_FILE="autore-%p-%m.profraw"
+export LLVM_PROFILE_FILE="langram-%p-%m.profraw"
 
 # Run tests
 cargo test
