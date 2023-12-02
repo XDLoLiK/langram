@@ -8,8 +8,8 @@ pub use multimap::MultiMap;
 #[cfg(feature = "earley")]
 pub mod earley;
 
-#[cfg(feature = "lr")]
-pub mod lr;
+#[cfg(feature = "lr1")]
+pub mod lr1;
 
 pub const START_RULE: char = '\u{1}';
 pub const END_TERMINAL: char = '\u{2}';

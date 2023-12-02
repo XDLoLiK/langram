@@ -1,4 +1,4 @@
-use langram::lr::LR1Parser;
+use langram::lr1::LR1Parser;
 use langram::{CFGrammar, FromStr, Parser};
 
 fn main() {
