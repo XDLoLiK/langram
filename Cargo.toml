@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["earley", "lr"]
+default = ["earley", "lr1"]
 earley = []
-lr = []
+lr1 = []
 
 [dependencies]
 multimap = "0.9.1"
