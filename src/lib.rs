@@ -2,7 +2,6 @@ pub use std::collections::HashSet;
 pub use std::str::FromStr;
 
 pub use anyhow::bail;
-use anyhow::Ok;
 pub use multimap::MultiMap;
 
 #[cfg(feature = "earley")]

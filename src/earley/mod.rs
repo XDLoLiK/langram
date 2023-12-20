@@ -7,14 +7,16 @@ struct EarleySituation {
     rule: CFRule,
     pos: usize,
     prev_cnt: usize,
+    prev_sit: Option<Box<EarleySituation>>
 }
 
 impl EarleySituation {
-    fn new(rule: &CFRule, pos: usize, prev_cnt: usize) -> Self {
+    fn new(rule: &CFRule, pos: usize, prev_cnt: usize, prev_sit: Option<Box<EarleySituation>>) -> Self {
         Self {
             rule: rule.clone(),
             pos,
             prev_cnt,
+            prev_sit,
         }
     }
 
@@ -45,11 +47,11 @@ impl Parser for EarleyParser {
         self.situations.clear();
         self.situations.resize(word.len() + 1, HashSet::new());
         let start_rule = self.grammar.as_ref().unwrap().get_start_rule();
-        self.situations[0].insert(EarleySituation::new(&start_rule, 0, 0));
+        self.situations[0].insert(EarleySituation::new(&start_rule, 0, 0, None));
         self.do_layer(0);
 
         for (i, letter) in word.char_indices() {
-            self.scan(letter, i);
+            self.scan(i, letter);
             self.do_layer(i + 1);
         }
 
@@ -57,6 +59,7 @@ impl Parser for EarleyParser {
             &start_rule,
             start_rule.1.len(),
             0,
+            None,
         ))
     }
 }
@@ -95,6 +98,7 @@ impl EarleyParser {
                         &(rule_left, rule_right.clone()),
                         0,
                         curr_cnt,
+                        Some(Box::new(situation.clone())),
                     ));
                 }
             }
@@ -103,7 +107,7 @@ impl EarleyParser {
         self.situations[curr_cnt].extend(new_situations);
     }
 
-    fn scan(&mut self, letter: char, curr_cnt: usize) {
+    fn scan(&mut self, curr_cnt: usize, letter: char) {
         let mut new_situations = HashSet::<EarleySituation>::new();
 
         for situation in self.situations[curr_cnt].iter() {
@@ -118,6 +122,7 @@ impl EarleyParser {
                     &situation.rule,
                     situation.pos + 1,
                     situation.prev_cnt,
+                    situation.prev_sit.clone(),
                 ));
             }
         }
@@ -132,15 +137,14 @@ impl EarleyParser {
             if curr_situation.pos != curr_situation.rule.1.len() {
                 continue;
             }
-
-            for prev_situation in self.situations[curr_situation.prev_cnt].iter() {
-                if prev_situation.nth(prev_situation.pos) == curr_situation.rule.0 {
-                    new_situations.insert(EarleySituation::new(
-                        &prev_situation.rule,
-                        prev_situation.pos + 1,
-                        prev_situation.prev_cnt,
-                    ));
-                }
+            
+            if let Some(prev_situation) = &curr_situation.prev_sit {
+                new_situations.insert(EarleySituation::new(
+                    &prev_situation.rule,
+                    prev_situation.pos + 1,
+                    prev_situation.prev_cnt,
+                    prev_situation.prev_sit.clone(),
+                ));
             }
         }
 
